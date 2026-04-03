@@ -1,0 +1,25 @@
+{
+  "name": "qa-toolkit",
+  "owner": {
+    "name": "QA Toolkit",
+    "url": "https://github.com/andrei-shapialiavich/qa-toolkit"
+  },
+  "plugins": [
+    {
+      "name": "qa-core",
+      "source": "./qa-core-plugin",
+      "version": "1.0.0",
+      "description": "Core QA workflow: exploratory testing, spec-based testing, test case design, regression testing, module testing, Playwright codegen. Works with any web app, with or without documentation.",
+      "category": "testing",
+      "keywords": ["qa", "testing", "playwright", "e2e", "regression", "exploratory", "test-cases"]
+    },
+    {
+      "name": "qa-audits",
+      "source": "./qa-audits-plugin",
+      "version": "1.0.0",
+      "description": "Specialized quality audits: UX heuristics (Nielsen), security baseline (OWASP), accessibility (WCAG 2.1 AA), performance perception, content & copy review. No documentation needed.",
+      "category": "testing",
+      "keywords": ["ux", "security", "accessibility", "wcag", "owasp", "performance", "content", "audit"]
+    }
+  ]
+}

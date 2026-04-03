@@ -1,0 +1,12 @@
+{
+  "name": "qa-audits",
+  "version": "1.0.0",
+  "description": "Specialized quality audits: UX heuristics (Nielsen's 10), frontend security (OWASP), accessibility (WCAG 2.1 AA), perceived performance, and content/copy review. Each audit has built-in evaluation criteria — no documentation needed.",
+  "skills": [
+    "./skills/ux-heuristics",
+    "./skills/security-baseline",
+    "./skills/accessibility-audit",
+    "./skills/performance-audit",
+    "./skills/content-review"
+  ]
+}

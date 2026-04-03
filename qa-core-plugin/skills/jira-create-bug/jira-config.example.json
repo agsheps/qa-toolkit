@@ -1,0 +1,8 @@
+{
+  "jira_url": "https://jira.talrace.com",
+  "project_key": "NOD",
+  "issue_type": "Bug",
+  "default_labels": ["qa-toolkit"],
+  "priorities": ["Highest", "High", "Medium", "Low", "Lowest"],
+  "custom_fields": {}
+}

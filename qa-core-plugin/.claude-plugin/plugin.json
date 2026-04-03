@@ -1,0 +1,15 @@
+{
+  "name": "qa-core",
+  "version": "1.0.0",
+  "description": "Core QA workflow: exploratory testing, spec-based testing, test case design, regression testing, module testing, and Playwright test code generation. Works with any web app, with or without documentation. Uses Playwright MCP for live browser interaction.",
+  "skills": [
+    "./skills/qa-common",
+    "./skills/exploratory-testing",
+    "./skills/spec-based-testing",
+    "./skills/test-case-designer",
+    "./skills/regression-testing",
+    "./skills/module-testing",
+    "./skills/playwright-codegen",
+    "./skills/jira-create-bug"
+  ]
+}
