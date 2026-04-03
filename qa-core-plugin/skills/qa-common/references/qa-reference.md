@@ -131,25 +131,27 @@ notes: "[Context, suggested fix]"
 Bugs found by any skill can be exported to Jira via `jira-create-bug`.
 
 ### Jira Instance
-- Type: **Jira Server** (not Cloud)
-- URL: `https://jira.talrace.com`
-- Auth: `JIRA_PAT` env var in `~/.bashrc` (Bearer token, Personal Access Token)
+- Type: **Jira Server** or **Jira Cloud** (configured per user)
+- URL: Stored in `qa/jira-config.json` → `jira_url` field
+- Auth: `JIRA_PAT` environment variable
+  - Jira Server/Data Center: Bearer token (Personal Access Token)
+  - Jira Cloud (`*.atlassian.net`): Basic auth with `email:api-token`
 - Config: `qa/jira-config.json`
 - Log: `qa/jira-log.md` (append-only, tracks all exported bugs)
 
 ### Environment Notes
-- Every Bash command must start with `source ~/.bashrc &&` to load JIRA_PAT
-- Use `node -e` for JSON parsing (python3 is not available)
-- Project keys may differ from project names (e.g., project "NODER" has key "NOD")
+- If `$JIRA_PAT` is not loaded, source the user's shell profile first
+- Use `node -e` for JSON parsing (fallback: `python3 -c`)
+- Project keys may differ from project names — always verify via API
 - Always verify project key via `/rest/api/2/project/<KEY>` before creating tickets
 
 ### Severity → Jira Priority Mapping
 
 **IMPORTANT**: Priority names are instance-specific. The standard Jira names
-(Blocker/Critical/Major/Minor/Trivial) do NOT exist on this instance.
-Always use the names from `/rest/api/2/priority`.
+(Blocker/Critical/Major/Minor/Trivial) may not exist on every instance.
+Always fetch actual names from `/rest/api/2/priority` during first-time setup.
 
-Priorities on jira.talrace.com:
+Default mapping:
 
 | QA Severity | Jira Priority | Jira Label   |
 |-------------|---------------|--------------|
@@ -161,8 +163,8 @@ Priorities on jira.talrace.com:
 
 ### Audit Finding → Jira Issue Type Mapping
 
-Available issue types in NOD project: Story, Task, Bug, Sub-task, Feature,
-Epic, Design, Workflow.
+Common Jira issue types: Story, Task, Bug, Sub-task, Feature, Epic.
+Actual types depend on the project configuration — fetch via API if needed.
 
 | Source Skill         | Severe findings → | Minor findings → |
 |----------------------|-------------------|------------------|

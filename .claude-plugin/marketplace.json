@@ -1,5 +1,6 @@
 {
   "name": "qa-toolkit",
+  "description": "AI-powered QA testing toolkit: 13 skills for exploratory testing, spec-based testing, regression testing, UX/security/accessibility audits, Playwright codegen, and Jira integration — all driven by Playwright MCP.",
   "owner": {
     "name": "agsheps",
     "url": "https://github.com/agsheps/qa-toolkit"

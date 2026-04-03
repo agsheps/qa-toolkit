@@ -134,14 +134,27 @@ The `jira-create-bug` skill creates tickets automatically in Jira after any test
 ### Setup (one-time)
 
 1. **Generate a Personal Access Token** in Jira:
-   Profile → Personal Access Tokens → Create token
+   - **Jira Server/Data Center**: Profile → Personal Access Tokens → Create token
+   - **Jira Cloud**: Profile → Security → API tokens → Create token
 
 2. **Save the token** as an environment variable:
+
+   **Linux:**
    ```bash
-   echo 'export JIRA_PAT="your-token-here"' >> ~/.bashrc
+   echo 'export JIRA_PAT="your-token-here"' >> ~/.bashrc && source ~/.bashrc
    ```
 
-3. **First use** — the skill will ask for your project key and create `qa/jira-config.json`.
+   **macOS:**
+   ```bash
+   echo 'export JIRA_PAT="your-token-here"' >> ~/.zshrc && source ~/.zshrc
+   ```
+
+   **Windows (PowerShell):**
+   ```powershell
+   [System.Environment]::SetEnvironmentVariable('JIRA_PAT', 'your-token-here', 'User')
+   ```
+
+3. **First use** — the skill will ask for your Jira URL, project key, and create `qa/jira-config.json`.
    A template is included at `qa-core-plugin/skills/jira-create-bug/jira-config.example.json`.
 
 ### How It Works
@@ -150,8 +163,8 @@ After any testing skill finds bugs:
 ```
 AI:  Found 5 bugs. Want me to create Jira tickets?
 You: Yes
-AI:  In which Jira project? [NOD]:
-You: NOD
+AI:  In which Jira project? [PROJ]:
+You: PROJ
 AI:  [creates 5 tickets, attaches screenshots, shows links]
 ```
 

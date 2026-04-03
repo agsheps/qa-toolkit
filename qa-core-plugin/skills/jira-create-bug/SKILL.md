@@ -24,45 +24,101 @@ after user confirms the list.
 
 If `qa/jira-config.json` does NOT exist, you MUST set it up:
 
-### 1. Verify project key
+### 1. Check auth environment variable
+
+First, check if `JIRA_PAT` is available in the environment:
+
+```bash
+echo "JIRA_PAT=${JIRA_PAT:+(set)}"
+```
+
+If NOT set, tell the user:
+```
+Jira auth is not configured. Set your Personal Access Token:
+
+  # Linux
+  echo 'export JIRA_PAT="your-token"' >> ~/.bashrc && source ~/.bashrc
+
+  # macOS
+  echo 'export JIRA_PAT="your-token"' >> ~/.zshrc && source ~/.zshrc
+
+  # Windows (PowerShell)
+  [System.Environment]::SetEnvironmentVariable('JIRA_PAT', 'your-token', 'User')
+
+Generate one at: Jira → Profile → Personal Access Tokens → Create token
+```
+
+If `$JIRA_PAT` is not loaded in the current shell (common when it was just
+added to a profile file), try `source ~/.bashrc 2>/dev/null || source ~/.zshrc 2>/dev/null`
+before the curl command. Only add this prefix when `$JIRA_PAT` is empty.
+
+### 2. Ask for Jira URL
+
+Ask the user for their Jira instance URL:
+```
+What is your Jira instance URL? (e.g., https://yourcompany.atlassian.net or https://jira.yourcompany.com)
+```
+
+Store it as `JIRA_URL` for use in all subsequent API calls.
+
+**Auth method**: Detect Jira type from the URL:
+- **Jira Cloud** (`*.atlassian.net`): Uses Basic auth with `email:api-token` (base64-encoded)
+- **Jira Server/Data Center**: Uses Bearer token auth with Personal Access Token
+
+### 3. Verify connection
+
+```bash
+curl -s -H "Authorization: Bearer $JIRA_PAT" \
+  "${JIRA_URL}/rest/api/2/myself" | node -e \
+  "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const j=JSON.parse(d);console.log(j.displayName?'Connected as: '+j.displayName+' ('+j.emailAddress+')':'ERROR: '+JSON.stringify(j))})"
+```
+
+For Jira Cloud, use Basic auth instead:
+```bash
+curl -s -u "${JIRA_EMAIL}:${JIRA_PAT}" \
+  "${JIRA_URL}/rest/api/2/myself" | node -e \
+  "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const j=JSON.parse(d);console.log(j.displayName?'Connected as: '+j.displayName+' ('+j.emailAddress+')':'ERROR: '+JSON.stringify(j))})"
+```
+
+### 4. Verify project key
 
 The user will give a project name, but Jira project keys are often
 abbreviated. **Always verify the key exists before creating tickets:**
 
 ```bash
-source ~/.bashrc && curl -s -H "Authorization: Bearer $JIRA_PAT" \
-  "https://jira.talrace.com/rest/api/2/project/<KEY>" | node -e \
+curl -s -H "Authorization: Bearer $JIRA_PAT" \
+  "${JIRA_URL}/rest/api/2/project/<KEY>" | node -e \
   "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const j=JSON.parse(d);console.log(j.key?'OK: '+j.key+' — '+j.name:'NOT FOUND: '+j.errorMessages)})"
 ```
 
 If 404 — list available projects to help the user find the right key:
 
 ```bash
-source ~/.bashrc && curl -s -H "Authorization: Bearer $JIRA_PAT" \
-  "https://jira.talrace.com/rest/api/2/project" | node -e \
+curl -s -H "Authorization: Bearer $JIRA_PAT" \
+  "${JIRA_URL}/rest/api/2/project" | node -e \
   "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{JSON.parse(d).forEach(p=>console.log(p.key+' — '+p.name))})"
 ```
 
-### 2. Discover available priorities
+### 5. Discover available priorities
 
 Jira instances have different priority schemes. **Always fetch actual
 priorities** before mapping:
 
 ```bash
-source ~/.bashrc && curl -s -H "Authorization: Bearer $JIRA_PAT" \
-  "https://jira.talrace.com/rest/api/2/priority" | node -e \
+curl -s -H "Authorization: Bearer $JIRA_PAT" \
+  "${JIRA_URL}/rest/api/2/priority" | node -e \
   "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{JSON.parse(d).forEach(p=>console.log(p.name+' (id:'+p.id+')'))})"
 ```
 
 Save the result to `qa/jira-config.json` so you don't have to fetch every time.
 
-### 3. Create config file
+### 6. Create config file
 
 Copy the template from `jira-create-bug/jira-config.example.json` (in this plugin)
 and save as `qa/jira-config.json`:
 ```json
 {
-  "jira_url": "https://jira.talrace.com",
+  "jira_url": "https://your-jira-instance.atlassian.net",
   "project_key": "<VERIFIED KEY>",
   "issue_type": "Bug",
   "default_labels": ["qa-toolkit"],
@@ -71,44 +127,17 @@ and save as `qa/jira-config.json`:
 }
 ```
 
-### 4. Check auth environment variable
-
-JIRA_PAT is stored in `~/.bashrc`. Every Bash command that uses it
-MUST start with `source ~/.bashrc &&` because each Bash tool invocation
-starts a fresh shell that does not auto-source bashrc.
-
-```bash
-source ~/.bashrc && echo "JIRA_PAT=${JIRA_PAT:+(set)}"
-```
-
-If NOT set, tell the user:
-```
-Jira auth is not configured. Set your Personal Access Token:
-
-  echo 'export JIRA_PAT="your-token"' >> ~/.bashrc
-
-Generate one at: Jira → Profile → Personal Access Tokens → Create token
-```
-
-### 5. Verify connection
-
-```bash
-source ~/.bashrc && curl -s -H "Authorization: Bearer $JIRA_PAT" \
-  "https://jira.talrace.com/rest/api/2/myself" | node -e \
-  "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const j=JSON.parse(d);console.log('Connected as: '+j.displayName+' ('+j.emailAddress+')')})"
-```
-
 ---
 
 ## Returning Use
 
 If `qa/jira-config.json` exists AND JIRA_PAT is set:
-- Load config silently
+- Load config silently (read `jira_url` from config)
 - Skip setup
 - Go straight to bug collection
 - **Always ask for project key** before creating tickets — the user may
   work with different Jira projects. Show the last used key as default:
-  "Jira project key? [NOD]:" — user can confirm or type a new one.
+  "Jira project key? [LAST-USED]:" — user can confirm or type a new one.
 
 ---
 
@@ -131,9 +160,9 @@ User describes a bug verbally — structure it into a ticket.
 
 ## Severity → Jira Priority Mapping
 
-Jira priorities vary by instance. The mapping below is for the current
-Jira instance (jira.talrace.com). If priorities differ, fetch them
-from `/rest/api/2/priority` and adjust.
+Jira priorities vary by instance. The mapping below is a default.
+On first use, fetch actual priorities from `/rest/api/2/priority`
+and adjust the mapping accordingly.
 
 | QA Severity | Jira Priority | Jira Label   |
 |-------------|---------------|--------------|
@@ -155,11 +184,11 @@ map that to the Jira priority names: exclude Low and Lowest.
 Parse bugs from the source. **Before showing the list, ask for the project key:**
 
 ```
-Jira project key? [NOD]: ___
+Jira project key? [LAST-USED]: ___
 ```
 
-If the user gives a name that doesn't match the key (e.g., "NODER" when
-the key is "NOD"), verify via API and suggest the correct key.
+If the user gives a name that doesn't match the key, verify via API
+and suggest the correct key.
 
 Update `qa/jira-config.json` with the chosen key.
 
@@ -167,7 +196,7 @@ Then show the list and ask for confirmation:
 
 ```
 ## Bugs to Create in Jira
-### Project: [KEY] @ jira.talrace.com
+### Project: [KEY] @ [JIRA_URL]
 
 | # | Bug ID  | Title                     | Severity | → Jira Priority |
 |---|---------|---------------------------|----------|-----------------|
@@ -185,18 +214,19 @@ was already exported, warn: "BUG-001 was already exported as NOD-3442. Skip?"
 
 ### Step 2: Create Tickets (EXECUTE — not describe)
 
-**IMPORTANT**: Every `bash` command must start with `source ~/.bashrc &&`
-to load the JIRA_PAT environment variable.
+**IMPORTANT**: Read `jira_url` from `qa/jira-config.json` and use it as
+`JIRA_URL` in all API calls. If `$JIRA_PAT` is not set in the shell,
+source the user's profile first.
 
 For EACH confirmed bug:
 
 **2a.** Build the issue payload JSON and write to a temp file:
 
 ```bash
-source ~/.bashrc && cat > /tmp/jira-issue-BUG-001.json << 'PAYLOAD'
+cat > /tmp/jira-issue-BUG-001.json << 'PAYLOAD'
 {
   "fields": {
-    "project": { "key": "NOD" },
+    "project": { "key": "<PROJECT_KEY>" },
     "summary": "Font size accepts 0 and negative values — no minimum validation",
     "issuetype": { "name": "Bug" },
     "priority": { "name": "High" },
@@ -208,24 +238,24 @@ PAYLOAD
 ```
 
 **2b.** Create the ticket via curl (NOT via helper scripts — direct curl
-is more reliable across environments):
+is more reliable across environments). Read `jira_url` from `qa/jira-config.json`:
 
 ```bash
-source ~/.bashrc && curl -s -w "\n%{http_code}" -X POST \
-  "https://jira.talrace.com/rest/api/2/issue" \
+curl -s -w "\n%{http_code}" -X POST \
+  "${JIRA_URL}/rest/api/2/issue" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $JIRA_PAT" \
   -d @/tmp/jira-issue-BUG-001.json
 ```
 
-**2c.** Parse the response — extract the issue `key` (e.g., `NOD-3442`)
-from the JSON: `{"id":"26806","key":"NOD-3442","self":"..."}`.
+**2c.** Parse the response — extract the issue `key` (e.g., `PROJ-123`)
+from the JSON: `{"id":"26806","key":"PROJ-123","self":"..."}`.
 
 **2d.** If screenshots exist for this bug (in `qa/screenshots/`), attach them:
 
 ```bash
-source ~/.bashrc && curl -s -o /dev/null -w "%{http_code}" -X POST \
-  "https://jira.talrace.com/rest/api/2/issue/NOD-3442/attachments" \
+curl -s -o /dev/null -w "%{http_code}" -X POST \
+  "${JIRA_URL}/rest/api/2/issue/PROJ-123/attachments" \
   -H "X-Atlassian-Token: no-check" \
   -H "Authorization: Bearer $JIRA_PAT" \
   -F "file=@qa/screenshots/test-font-size-zero.png"
@@ -253,8 +283,8 @@ After all tickets are created:
 
 | # | Bug ID  | Jira Key   | Title                     | Priority | Link |
 |---|---------|------------|---------------------------|----------|------|
-| 1 | BUG-001 | NOD-3442   | Font size validation      | High     | https://jira.talrace.com/browse/NOD-3442 |
-| 2 | BUG-002 | NOD-3443   | Ctrl+K broken             | Medium   | https://jira.talrace.com/browse/NOD-3443 |
+| 1 | BUG-001 | PROJ-123   | Font size validation      | High     | ${JIRA_URL}/browse/PROJ-123 |
+| 2 | BUG-002 | PROJ-124   | Ctrl+K broken             | Medium   | ${JIRA_URL}/browse/PROJ-124 |
 | ✗ | BUG-003 | —          | Typo in heading           | —        | FAILED: field "priority" value invalid |
 
 Created: 2/3 | Failed: 1/3 | Screenshots attached: 2
@@ -269,8 +299,8 @@ Created: 2/3 | Failed: 1/3 | Screenshots attached: 2
 
 | Bug ID  | Jira Key  | Link |
 |---------|-----------|------|
-| BUG-001 | NOD-3442  | https://jira.talrace.com/browse/NOD-3442 |
-| BUG-002 | NOD-3443  | https://jira.talrace.com/browse/NOD-3443 |
+| BUG-001 | PROJ-123  | ${JIRA_URL}/browse/PROJ-123 |
+| BUG-002 | PROJ-124  | ${JIRA_URL}/browse/PROJ-124 |
 ```
 
 Then ask: "Add Jira links to the test report?"
@@ -320,7 +350,7 @@ as `\"` in the description string. Use heredoc with `<< 'PAYLOAD'`
 | HTTP Code | Meaning | Action |
 |-----------|---------|--------|
 | 200/201   | Created | Extract key from response JSON, continue |
-| 401/403   | Auth failed | Stop. Tell user: `source ~/.bashrc && echo $JIRA_PAT` to verify token is loaded |
+| 401/403   | Auth failed | Stop. Tell user to verify `echo $JIRA_PAT` is set. If empty, source the profile or set the env var |
 | 400       | Bad payload | Show Jira's error message. Common cause: priority name doesn't match. Fetch valid priorities and retry |
 | 404       | Project not found | List available projects via API, ask user to pick the right key |
 | 429       | Rate limited | Wait 5 seconds, retry |
@@ -330,26 +360,29 @@ If auth fails on the first ticket, STOP — don't try the rest (they'll all fail
 
 **Common pitfall**: Jira priority names are instance-specific.
 "Blocker/Critical/Major/Minor/Trivial" is NOT universal. Always use the
-names from `/rest/api/2/priority`. On jira.talrace.com the priorities are:
-Highest, High, Medium, Low, Lowest.
+names from `/rest/api/2/priority` fetched during setup.
 
 ---
 
 ## Environment Notes
 
-- **Shell**: Each Bash tool call starts a fresh shell. `~/.bashrc` is NOT
-  auto-sourced. Every command using `$JIRA_PAT` must begin with
-  `source ~/.bashrc &&`.
-- **JSON parsing**: Use `node -e` (NOT python3 — not installed on this machine).
-- **Auth method**: Jira Server with Personal Access Token (Bearer auth).
-  Basic auth (email+token) is for Jira Cloud only.
+- **Shell**: Each Bash tool call starts a fresh shell. If `$JIRA_PAT` is
+  not available, try sourcing the user's profile first:
+  `source ~/.bashrc 2>/dev/null || source ~/.zshrc 2>/dev/null`.
+  Only add this prefix when `$JIRA_PAT` is empty.
+- **JSON parsing**: Use `node -e` for JSON parsing. If Node.js is not
+  available, fall back to `python3 -c`.
+- **Auth method**: Read `jira_url` from `qa/jira-config.json`.
+  - Jira Server/Data Center: Bearer auth with Personal Access Token
+  - Jira Cloud (`*.atlassian.net`): Basic auth with `email:api-token`
 - **File paths**: Use forward slashes. Prefix `qa/` paths relative to project root.
 
 ---
 
 ## Rules
 - **EXECUTE curl commands** — do not just show them for the user to run
-- **source ~/.bashrc** before every Bash command that needs JIRA_PAT
+- **Read jira_url from qa/jira-config.json** — never hardcode the Jira URL
+- **Source profile only if $JIRA_PAT is empty** — don't blindly source every time
 - **Verify project key** via API before creating tickets — names ≠ keys
 - **Fetch priorities** from API on first use — don't assume standard names
 - **Never save auth tokens to files** — only in ~/.bashrc env var
