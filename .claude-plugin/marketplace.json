@@ -1,8 +1,8 @@
 {
   "name": "qa-toolkit",
   "owner": {
-    "name": "QA Toolkit",
-    "url": "https://github.com/andrei-shapialiavich/qa-toolkit"
+    "name": "agsheps",
+    "url": "https://github.com/agsheps/qa-toolkit"
   },
   "plugins": [
     {

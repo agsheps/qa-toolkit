@@ -25,7 +25,7 @@ npx playwright install chromium
 claude mcp add playwright -s user -- npx @playwright/mcp@latest
 
 # 2. Install plugins
-/plugin marketplace add andrei.shapialevich/qa-toolkit
+/plugin marketplace add agsheps/qa-toolkit
 /plugin install qa-core@qa-toolkit
 /plugin install qa-audits@qa-toolkit
 ```
@@ -259,5 +259,4 @@ qa-toolkit/
 
 ## License
 
-TALRACE
-# qa-toolkit
+MIT License. See [LICENSE](LICENSE) for details.

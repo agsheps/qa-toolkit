@@ -2,6 +2,14 @@
   "name": "qa-core",
   "version": "1.0.0",
   "description": "Core QA workflow: exploratory testing, spec-based testing, test case design, regression testing, module testing, and Playwright test code generation. Works with any web app, with or without documentation. Uses Playwright MCP for live browser interaction.",
+  "author": {
+    "name": "agsheps",
+    "url": "https://github.com/agsheps"
+  },
+  "homepage": "https://github.com/agsheps/qa-toolkit",
+  "repository": "https://github.com/agsheps/qa-toolkit",
+  "license": "MIT",
+  "keywords": ["qa", "testing", "playwright", "e2e", "regression", "exploratory", "test-cases"],
   "skills": [
     "./skills/qa-common",
     "./skills/exploratory-testing",
